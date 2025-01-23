@@ -94,7 +94,7 @@ catch(error){
 }
 });
 
-router.post('/api/checkUser', async (req, res) => {
+router.post('/checkUser', async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
