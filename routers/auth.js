@@ -11,7 +11,8 @@ const jwt_s="surya";
 router.post('/user',[
     body('username').isLength({min:3}),
     body('email').isLength({min:2}).isEmail(),
-    body('password').isLength({min:3})
+    body('password').isLength({min:3}),
+    body('dob')
 ],async (req,res)=>{
      const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -33,6 +34,7 @@ router.post('/user',[
       username: req.body.username,
       email:req.body.email,
       password: secPass,
+      dob: req.body.dob
     });
     const data={
       user:{
@@ -52,6 +54,7 @@ router.post('/user',[
 router.post('/login',[
   body('email','Enter a Correct Email').isEmail(),
   body('password','Password cnt blank').exists(),
+  body('dob','Dob cant be blank')
 ],async (req,res)=>{
   let sucess=false;
   //check for possible errors 
@@ -59,9 +62,9 @@ router.post('/login',[
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  const {email,password}=req.body;
+  const {email,password,dob}=req.body;
   try{
-    console.log(email + password);
+    console.log(email + password + dob);
   const user=await User.findOne({email});
   if(!user){
     return res.status(400).send("please try to login with correct credentials...");
@@ -91,14 +94,23 @@ catch(error){
 }
 });
 
-router.get('/getuser', fetchuser,  async (req, res) => {
+router.post('/api/checkUser', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
   try {
-    const userId = req.user.id;
-    const user = await User.findById(userId).select("-password");
-    res.send(user);
+    const user = await User.findOne({ email });
+    if (user) {
+      return res.status(200).json({ message: 'User exists', user });
+    } else {
+      return res.status(404).json({ message: 'User not found' });
+    }
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Internal Server Error");
+    console.error('Error checking user:', error);
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
