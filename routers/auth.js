@@ -178,29 +178,42 @@ router.post("/set-username", [
 });
 
 // **6. Login**
-router.post("/login", [
-    body("username").notEmpty().withMessage("Username is required"),
-    body("password").notEmpty().withMessage("Password is required")
-], async (req, res) => {
+router.post(
+  '/login',
+  [
+    body('username').notEmpty().withMessage('Username or email is required'),
+    body('password').notEmpty().withMessage('Password is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { username, password } = req.body;
 
     try {
-        const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
+      const user = await User.findOne({
+        $or: [{ username }, { email: username }], // Check by username or email
+      });
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
 
-        const token = jwt.sign({ id: user._id }, JWT_SECRET);
-        res.status(200).json({ message: "Login successful", token });
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+
+      const token = jwt.sign({ id: user._id }, JWT_SECRET);
+      res.status(200).json({ message: 'Login successful', token });
     } catch (error) {
-        res.status(500).json({ error: "Server error" });
+      console.error('Error during login:', error);
+      res.status(500).json({ error: 'Server error' });
     }
-});
+  }
+);
 
 router.post('/checkUser', async (req, res) => {
   const { email } = req.body;
