@@ -8,13 +8,13 @@ var cors=require('cors');
 const app = express();
 const PORT=5000;
 connectDB();
-// app.use(cors(
-//     {
-//         origin:["https://notes-application-front-htzqbfgbg.vercel.app"],
-//         methods:["POST","GET"],
-//         credentials:true
-//     }
-// ));
+app.use(cors(
+    {
+        origin:["https://vertxai-backend.vercel.app"],
+        methods:["POST","GET"],
+        credentials:true
+    }
+));
 app.use(cors());
 app.use(express.json());
 
