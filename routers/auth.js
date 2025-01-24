@@ -129,13 +129,12 @@ const JWT_SECRET = "surya_secret";
 
 // Configure email transporter
 const transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
+    service: 'gmail',
     auth: {
-        user: 'abagail.bradtke@ethereal.email',
-        pass: 'U6TU6nW4BfvAfZkV4F'
-    }
-});
+      user: 'plsprakash2003@gmail.com', // Your email
+      pass: 'eegy etgc mxbz jlgl', // Gmail App Password
+    },
+  });
 
 // **1. Register User**
 router.post("/register", [
@@ -177,13 +176,14 @@ router.post("/register", [
         // Send verification email
         const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "1h" });
         const link = `http://localhost:5000/api/auth/verify/${token}`;
-        await transporter.sendMail({
-            from: "plsprakash2003@gmail.com",
+        let info = await transporter.sendMail({
+            from: `plsprakash2003@gmail.com`,
             to: email,
             subject: "Verify your email",
             html: `<p>Click <a href="${link}">here</a> to verify your email.</p>`
         });
-
+        console.log(info.messageId);
+        console.log(info);
         res.status(200).json({ message: "Verification email sent" });
     } catch (error) {
         res.status(500).json({ error: error.message });
