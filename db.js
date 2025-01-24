@@ -3,7 +3,7 @@ const mongoose=require('mongoose');
 mongoose.set('strictQuery',true);
 // mongodb+srv://Prakash:<password>@cluster0.emqxvew.mongodb.net/?retryWrites=true&w=majority
 const connectDB= ()=>{
-    mongoose.connect("mongodb://localhost:27017/vertxai3"
+    mongoose.connect("mongodb://127.0.0.1:27017/vertxai3"
     );
     console.log("connected");
 }
