@@ -4,11 +4,21 @@ mongoose.set('strictQuery',true);
 
 // mongodb+srv://Prakash:<password>@cluster0.emqxvew.mongodb.net/?retryWrites=true&w=majority
 
-const connectDB= ()=>{
-    mongoose.connect('mongodb+srv://plsprakash2003:Surya_2003@cluster0.bpe9m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
-  );
-    console.log("connected");
-}
+const connectDB = async () => {
+    try {
+      await mongoose.connect(
+        "mongodb+srv://plsprakash2003:Surya_2003@cluster0.bpe9m.mongodb.net/Cluster0?retryWrites=true&w=majority",
+        {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+        }
+      );
+      console.log("MongoDB connected successfully!");
+    } catch (error) {
+      console.error("Error connecting to MongoDB:", error.message);
+      process.exit(1); // Exit process with failure
+    }
+  };
 
 
 
