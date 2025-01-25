@@ -8,13 +8,17 @@ var cors=require('cors');
 const app = express();
 const PORT=5000;
 connectDB();
-app.use(cors(
-    {
-        origin:["https://vertxai-backend.vercel.app"],
-        methods:["POST","GET"],
-        credentials:true
-    }
-));
+
+app.use(cors({
+    origin: [
+        "https://vertxai-backend.vercel.app", // Production frontend
+        "http://localhost:5173" // Development frontend
+    ],
+    methods: ["POST", "GET", "OPTIONS"],
+    credentials: true // Allow cookies/credentials
+}));
+
+app.options("*", cors()); // Handle preflight requests
 app.use(cors());
 app.use(express.json());
 
