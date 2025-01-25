@@ -1,30 +1,35 @@
 const connectDB = require('./db');
 const express = require('express');
-var cors=require('cors');
-// const bodyParser = require('body-parser');
-// const mongoose = require('mongoose');
-// const qrcode = require('qrcode');
-//connectDB();
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
 const app = express();
-const PORT=5000;
+const PORT = 5000;
+
+// Connect to Database
 connectDB();
 
+// Middleware for CORS
+app.use(cors({
+    origin: 'http://localhost:5173', // Allowed frontend origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
+    credentials: true, // Allow credentials
+}));
 
-
-
-app.use(cors());
+// Middleware for JSON Parsing
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
+// Routes
+app.use('/api/auth', require('./routers/auth.js'));
+app.use('/api/notes', require('./routers/notes'));
 
-app.use('/api/auth',require('./routers/auth.js'));
-app.use('/api/notes',require('./routers/notes'));
+// Health Check
+app.get('/', (req, res) => {
+    res.json("API is running");
+});
 
-  
-app.get('/',(req,res)=>{
-    res.json("hello");
-})
-
-
+// Start Server
 app.listen(PORT, () => {
-    console.log(`Vertxai listening at http://localhost:${PORT}`);
-})  
+    console.log(`Server running at http://localhost:${PORT}`);
+});
