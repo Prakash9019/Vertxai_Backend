@@ -11,13 +11,9 @@ connectDB();
 
 // Middleware for CORS
 app.use(cors({
-    origin: "*", // Allow all origins (or specify a specific origin for security)
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow specific HTTP methods
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
-  }));
-  
-  // Handle Preflight Requests Globally
-  app.options('*', cors()); // Handle preflight requests for all routes
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
   
   // Parse JSON Request Bodies
   app.use(express.json());
