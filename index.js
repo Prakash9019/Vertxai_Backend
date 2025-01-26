@@ -11,22 +11,11 @@ connectDB();
 
 
 
-
-
-var allowlist = ['http://localhost:5173', 'https://www.govertx.com']
-var corsOptionsDelegate = function (req, callback) {
-  var corsOptions;
-  if (allowlist.indexOf(req.header('Origin')) !== -1) {
-    corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
-  } else {
-    corsOptions = { origin: false } // disable CORS for this request
-  }
-  callback(null, corsOptions) // callback expects two parameters: error and options
-}
-
-
-
-app.use(cors(corsOptionsDelegate));
+app.use(cors({
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+// cors(corsOptionsDelegate)
 
 // Middleware for JSON Parsing
 app.use(bodyParser.urlencoded({ extended: true }));
