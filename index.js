@@ -9,20 +9,24 @@ const PORT = 5000;
 // Connect to Database
 connectDB();
 
-// Middleware for CORS
-app.use(cors({
-  origin: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-}));
-  
-  // Parse JSON Request Bodies
-  app.use(express.json());
-  
-  // Custom Middleware for Logging (Optional, for Debugging)
-  app.use((req, res, next) => {
-    console.log(`Incoming request from origin: ${req.headers.origin}`);
-    next();
-  });
+
+
+
+
+var allowlist = ['http://localhost:5173', 'https://www.govertx.com']
+var corsOptionsDelegate = function (req, callback) {
+  var corsOptions;
+  if (allowlist.indexOf(req.header('Origin')) !== -1) {
+    corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
+  } else {
+    corsOptions = { origin: false } // disable CORS for this request
+  }
+  callback(null, corsOptions) // callback expects two parameters: error and options
+}
+
+
+
+app.use(cors(corsOptionsDelegate));
 
 // Middleware for JSON Parsing
 app.use(bodyParser.urlencoded({ extended: true }));
