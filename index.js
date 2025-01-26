@@ -11,9 +11,7 @@ connectDB();
 
 // Middleware for CORS
 app.use(cors({
-    origin: ['http://localhost:5173','https://www.govertx.com'], // Allowed frontend origin
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
-    credentials: true, // Allow credentials
+    origin: "*"
 }));
 
 // Middleware for JSON Parsing
