@@ -11,7 +11,7 @@ connectDB();
 
 // Middleware for CORS
 app.use(cors({
-    origin: "*", // Allow all origins (or specify a specific origin for security)
+    origin: "https://www.govertx.com", // Allow all origins (or specify a specific origin for security)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow specific HTTP methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
   }));
