@@ -13,16 +13,18 @@ connectDB();
 
 app.use(cors({
   origin: true,
+  credentials:true, 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
 // cors(corsOptionsDelegate)
 
+app.use(express.json());
 // Middleware for JSON Parsing
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', require('./routers/auth.js'));
-app.use('/api/notes', require('./routers/notes'));
+app.use('/api/notes', require('./routers/notes.js'));
 
 // Health Check
 app.get('/', (req, res) => {
@@ -33,3 +35,6 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
+
+
+module.exports = app;
