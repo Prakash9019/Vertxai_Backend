@@ -12,8 +12,8 @@ const JWT_SECRET = "surya_secret"; // Ensure this is an environment variable for
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'plsprakash2003@gmail.com', // Your email
-    pass: 'eegy etgc mxbz jlgl', // Gmail App Password
+    user: 'otp.vertx@gmail.com', // Your email
+    pass: 'cfbb fnun rwtt wctv', // Gmail App Password
   },
 });
 
