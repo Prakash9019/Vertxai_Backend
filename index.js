@@ -11,11 +11,24 @@ connectDB();
 
 // Middleware for CORS
 app.use(cors({
-    origin: "*"
-}));
+    origin: "*", // Allow all origins (or specify a specific origin for security)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow specific HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
+  }));
+  
+  // Handle Preflight Requests Globally
+  app.options('*', cors()); // Handle preflight requests for all routes
+  
+  // Parse JSON Request Bodies
+  app.use(express.json());
+  
+  // Custom Middleware for Logging (Optional, for Debugging)
+  app.use((req, res, next) => {
+    console.log(`Incoming request from origin: ${req.headers.origin}`);
+    next();
+  });
 
 // Middleware for JSON Parsing
-app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
