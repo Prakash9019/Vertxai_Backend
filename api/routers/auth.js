@@ -30,6 +30,7 @@ router.post(
     body("dob").isISO8601().toDate().withMessage("Enter a valid date in YYYY-MM-DD format"),
   ],
   async (req, res) => {
+    console.log(req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -195,6 +196,7 @@ router.post(
   body('password').notEmpty().withMessage('Password is required'),
 ],
 async (req, res) => {
+  console.log(req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
