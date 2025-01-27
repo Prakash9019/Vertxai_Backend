@@ -22,6 +22,7 @@ const generateVerificationToken = (email, code) => {
   return jwt.sign({ email, code }, JWT_SECRET); // Token expires in 5 minutes
 };
 
+
 // **1. Register User and Send Verification Email**
 router.post(
   "/register",
@@ -314,6 +315,52 @@ router.post(
     }
   }
 );
+
+// **Resend OTP API**
+router.post(
+  "/resend-otp",
+  [body("email").isEmail().withMessage("Enter a valid email")],
+  async (req, res) => {
+    console.log(req.body);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    try {
+      // Check if the user exists
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Generate a new OTP and verification token
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
+      const token = generateVerificationToken(email, verificationCode);
+
+      // Update the user record with the new token and code
+      user.verificationToken = token;
+      user.verificationTokenExpiry = Date.now() + 5 * 60 * 1000; // Expiry set to 5 minutes from now
+      await user.save();
+
+      // Send the verification email
+      await transporter.sendMail({
+        to: email,
+        subject: "Resend Verification Code",
+        html: `<p>Your new verification code is <strong>${verificationCode}</strong>. It will expire in 5 minutes.</p>`,
+      });
+
+      res.status(200).json({ message: "Verification code resent to email.", token });
+    } catch (error) {
+      console.error("Error during OTP resend:", error.message);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+);
+
+
 
 module.exports = router;
 
