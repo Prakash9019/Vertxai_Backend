@@ -2,14 +2,17 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
+    googleId: { type: String },
+    name: { type: String },
     username: { type: String,default: null },
     email: { type: String, required: true, unique: true },
     password: { type: String },
-    dob: { type: Date, required: true },
+    dob: { type: Date },
     isVerified: { type: Boolean, default: false },
     verificationToken: { type: String, default: "" },
     verificationTokenExpiry: { type: Date }, // Expiry time for the verification token
     profilePic: { type: String, default: "" },
+    profilePicture:{type:String}
   },
   { timestamps: true }
 );

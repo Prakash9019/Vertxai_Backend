@@ -22,6 +22,36 @@ const generateVerificationToken = (email, code) => {
   return jwt.sign({ email, code }, JWT_SECRET); // Token expires in 5 minutes
 };
 
+// router.get(
+//   "/google",
+//   passport.authenticate("google", {
+//     scope: ["profile", "email"],
+//   })
+// );
+
+// // Google Redirect Callback
+// router.get(
+//   "/google/callback",
+//   passport.authenticate("google", { failureRedirect: "/" }),
+//   (req, res) => {
+//     res.redirect("http://localhost:3000/dashboard"); // Redirect to frontend
+//   }
+// );
+
+// // Get Current User
+// router.get("/current_user", (req, res) => {
+//   res.send(req.user);
+// });
+
+// // Logout
+// router.get("/logout", (req, res) => {
+//   req.logout((err) => {
+//     if (err) {
+//       return res.status(500).send(err);
+//     }
+//     res.redirect("/");
+//   });
+// });
 
 // **1. Register User and Send Verification Email**
 router.post(
