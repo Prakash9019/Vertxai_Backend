@@ -4,6 +4,9 @@ const User = require("../user.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+
 
 const router = express.Router();
 const JWT_SECRET = "surya_secret"; // Ensure this is an environment variable for security
@@ -21,6 +24,97 @@ const transporter = nodemailer.createTransport({
 const generateVerificationToken = (email, code) => {
   return jwt.sign({ email, code }, JWT_SECRET); // Token expires in 5 minutes
 };
+
+
+
+
+
+
+
+// passport.use(
+//   new GoogleStrategy(
+//     {
+//       clientID: process.env.GOOGLE_CLIENT_ID,
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//       callbackURL: "/auth/google/callback",
+//     },
+//     async (accessToken, refreshToken, profile, done) => {
+//       const existingUser = await User.findOne({ googleId: profile.id });
+//       if (existingUser) {
+//         return done(null, existingUser);
+//       }
+
+//       const newUser = await User.create({
+//         googleId: profile.id,
+//         name: profile.displayName,
+//         email: profile.emails[0].value,
+//         profilePicture: profile.photos[0].value,
+//       });
+
+//       done(null, newUser);
+//     }
+//   )
+// );
+
+// // Serialize and Deserialize User
+// passport.serializeUser((user, done) => {
+//   done(null, user.id);
+// });
+
+// passport.deserializeUser(async (id, done) => {
+//   const user = await User.findById(id);
+//   done(null, user);
+// });
+
+
+
+// router.get(
+//   "/auth/google",
+//   passport.authenticate("google", { scope: ["profile", "email"] })
+// );
+
+// router.get(
+//   "/auth/google/callback",
+//   passport.authenticate("google", { failureRedirect: "/login" }),
+//   (req, res) => {
+//     res.redirect("/"); // Redirect to your frontend after successful login
+//   }
+// );
+
+// router.get("/auth/logout", (req, res) => {
+//   req.logout((err) => {
+//     if (err) console.error(err);
+//     res.redirect("/");
+//   });
+// });
+
+// router.get("/auth/user", (req, res) => {
+//   if (req.isAuthenticated()) {
+//     res.json(req.user); // Send user details to the frontend
+//   } else {
+//     res.status(401).send("Unauthorized");
+//   }
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // router.get(
 //   "/google",
@@ -90,7 +184,7 @@ router.post(
         html: `<p>Your verification code is <strong>${verificationCode}</strong>. It will expire in 5 minutes.</p>`,
       });
 
-      res.status(200).json({ message: "Verification token sent to email.", token });
+      res.status(200).json({ message: "Verification token sent to email.", token,email });
     } catch (error) {
       console.error("Error during registration:", error.message);
       res.status(500).json({ message: "Internal Server Error" });
@@ -227,7 +321,7 @@ router.post(
   body('password').notEmpty().withMessage('Password is required'),
 ],
 async (req, res) => {
-  console.log(req.body);
+ 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -248,9 +342,9 @@ async (req, res) => {
     if (!isPasswordValid) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-
+    const email = user.email;
     const token = jwt.sign({ id: user._id }, JWT_SECRET);
-    res.status(200).json({ message: 'Login successful', token });
+    res.status(200).json({ message: 'Login successful', token,email });
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Server error' });
@@ -389,6 +483,18 @@ router.post(
     }
   }
 );
+
+router.post("/get-user", async (req, res) => {
+  const { email } = req.body;
+  console.log(email);
+  try {
+    const users = await User.findOne({ email }); // Fetch all users from DB
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 
 
 
