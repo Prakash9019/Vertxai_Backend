@@ -4,8 +4,6 @@ const User = require("../user.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 
 const router = express.Router();
