@@ -283,6 +283,33 @@ router.post("/profile", async (req, res) => {
   }
 });
 
+router.post("/get-profile", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // const decoded = jwt.verify(token, JWT_SECRET);
+    // const { email } = decoded;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Profile retrieved successfully",
+      user: {
+        username: user.username,
+        email: user.email,
+        profilePic: user.profilePic,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 // **5. Set Username**
 router.post("/set-username", [
   body("username").isLength({ min: 3 }).withMessage("Username must be at least 3 characters")
