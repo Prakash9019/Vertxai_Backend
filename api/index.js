@@ -5,6 +5,7 @@ const session = require("express-session");
 const passport = require("passport");
 const connectDB = require("./db");
 const User = require("./models/user");
+const OAuth2Strategy = require("passport-google-oauth2").Strategy;
 const dotenv = require("dotenv");
 
 dotenv.config();
@@ -122,8 +123,8 @@ app.use(passport.session());
 
 passport.use(
   new OAuth2Strategy({
-      clientID:clientid,
-      clientSecret:clientsecret,
+    clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL:"/auth/google/callback",
       scope:["profile","email"]
   },
@@ -184,7 +185,7 @@ app.get("/logout",(req,res,next)=>{
 
 // ✅ Routes
 app.use("/api/auth", require("./routers/auth"));
-app.use("/api/posts", require("./routers/posts"));
+// app.use("/api/posts", require("./routers/posts"));
 app.use("/api/notes", require("./routers/notes"));
 
 // ✅ Health Check
