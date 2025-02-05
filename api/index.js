@@ -111,22 +111,30 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //   }
 // });
 // const session = require("express-session");
-const MongoStore = require("connect-mongo");
+// const MongoStore = require("connect-mongo");
+
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET || "default_secret",
+//     resave: false,
+//     saveUninitialized: false,
+//     store: MongoStore.create({ mongoUrl: 'mongodb+srv://plsprakash2003:Surya_2003@cluster0.bpe9m.mongodb.net/Cluster0?retryWrites=true&w=majority' }),
+//     cookie: {
+//       secure: process.env.NODE_ENV === "production", // Ensure secure cookies in production
+//       httpOnly: true, // Prevent client-side access to cookies
+//       maxAge: 1000 * 60 * 60 * 24, // 1 day
+//     },
+//   })
+// );
 
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "default_secret",
     resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: 'mongodb+srv://plsprakash2003:Surya_2003@cluster0.bpe9m.mongodb.net/Cluster0?retryWrites=true&w=majority' }),
-    cookie: {
-      secure: process.env.NODE_ENV === "production", // Ensure secure cookies in production
-      httpOnly: true, // Prevent client-side access to cookies
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
-    },
+    saveUninitialized: true,
+    cookie: { secure: false }, // Set to true if using HTTPS
   })
 );
-
 
 // setuppassport
 app.use(passport.initialize());
@@ -176,7 +184,7 @@ passport.deserializeUser((user,done)=>{
 app.get("/auth/google",passport.authenticate("google",{scope:["profile","email"]}));
 
 app.get("/auth/google/callback",passport.authenticate("google",{
-  successRedirect:"https://vertxai-backend.vercel.app/founder",
+  successRedirect:"https://vertxai-backend.vercel.app/founder/home",
   failureRedirect:"https://vertxai-backend.vercel.app/"
 }))
 
@@ -197,9 +205,9 @@ app.get("/logout",(req,res,next)=>{
 })
 
 // ✅ Routes
-app.use("/api/auth", require("./routers/auth"));
+app.use("/api/auth", require("./routers/auth.js"));
 // app.use("/api/posts", require("./routers/posts"));
-app.use("/api/notes", require("./routers/notes"));
+app.use("/api/notes", require("./routers/notes.js"));
 
 // ✅ Health Check
 app.get("/", (req, res) => {
@@ -212,3 +220,5 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+
