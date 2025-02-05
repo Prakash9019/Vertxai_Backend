@@ -27,88 +27,160 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // ✅ Session Configuration (Fixing regenerate issue)
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "default_secret",
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }, // Set to true if using HTTPS
-  })
-);
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET || "default_secret",
+//     resave: false,
+//     saveUninitialized: true,
+//     cookie: { secure: false }, // Set to true if using HTTPS
+//   })
+// );
 
-// ✅ Passport Setup
+// // ✅ Passport Setup
+// app.use(passport.initialize());
+// app.use(passport.session());
+
+// // ✅ Google OAuth Strategy
+// passport.use(
+//   new GoogleStrategy(
+//     {
+//       clientID: process.env.GOOGLE_CLIENT_ID,
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//       callbackURL: "/auth/google/callback",
+//     },
+//     async (accessToken, refreshToken, profile, done) => {
+//       try {
+//         const updatedUser = await User.findOneAndUpdate(
+//           { googleId: profile.id },  // Search for user by Google ID
+//           {
+//             name: profile.displayName,
+//             email: profile.emails[0].value,
+//             profilePicture: profile.photos[0].value,
+//           },
+//           { new: true, upsert: true, setDefaultsOnInsert: true } // Create if not exists
+//         );
+
+//         return done(null, updatedUser);
+//       } catch (error) {
+//         return done(error, null);
+//       }
+//     }
+//   )
+// );
+
+
+// // ✅ Serialize and Deserialize User
+// passport.serializeUser((user, done) => {
+//   done(null, user.id);
+// });
+
+// passport.deserializeUser(async (id, done) => {
+//   try {
+//     const user = await User.findById(id);
+//     done(null, user);
+//   } catch (error) {
+//     done(error, null);
+//   }
+// });
+
+// // ✅ Google OAuth Routes
+// app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+// app.get(
+//   "/auth/google/callback",
+//   passport.authenticate("google", { failureRedirect: "/login" }),
+//   (req, res) => {
+//     res.redirect(process.env.FRONTEND_URL || "/");
+//   }
+// );
+
+// app.get("/auth/logout", (req, res) => {
+//   req.logout((err) => {
+//     if (err) return res.status(500).json({ error: "Logout failed" });
+//     req.session.destroy(); // Clear session
+//     res.redirect(process.env.FRONTEND_URL || "/");
+//   });
+// });
+
+// app.get("/auth/user", (req, res) => {
+//   if (req.isAuthenticated()) {
+//     res.json(req.user);
+//   } else {
+//     res.status(401).json({ error: "Unauthorized" });
+//   }
+// });
+
+app.use(session({
+  secret:"YOUR SECRET KEY",
+  resave:false,
+  saveUninitialized:true
+}))
+
+// setuppassport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ✅ Google OAuth Strategy
 passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback",
-    },
-    async (accessToken, refreshToken, profile, done) => {
+  new OAuth2Strategy({
+      clientID:clientid,
+      clientSecret:clientsecret,
+      callbackURL:"/auth/google/callback",
+      scope:["profile","email"]
+  },
+  async(accessToken,refreshToken,profile,done)=>{
       try {
-        const updatedUser = await User.findOneAndUpdate(
-          { googleId: profile.id },  // Search for user by Google ID
-          {
-            name: profile.displayName,
-            email: profile.emails[0].value,
-            profilePicture: profile.photos[0].value,
-          },
-          { new: true, upsert: true, setDefaultsOnInsert: true } // Create if not exists
-        );
+          let user = await User.findOne({googleId:profile.id});
 
-        return done(null, updatedUser);
+          if(!user){
+              user = new User({
+                  googleId:profile.id,
+                  displayName:profile.displayName,
+                  email:profile.emails[0].value,
+                  image:profile.photos[0].value
+              });
+
+              await user.save();
+          }
+
+          return done(null,user)
       } catch (error) {
-        return done(error, null);
+          return done(error,null)
       }
-    }
+  }
   )
-);
+)
 
+passport.serializeUser((user,done)=>{
+  done(null,user);
+})
 
-// ✅ Serialize and Deserialize User
-passport.serializeUser((user, done) => {
-  done(null, user.id);
+passport.deserializeUser((user,done)=>{
+  done(null,user);
 });
 
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id);
-    done(null, user);
-  } catch (error) {
-    done(error, null);
+// initial google ouath login
+app.get("/auth/google",passport.authenticate("google",{scope:["profile","email"]}));
+
+app.get("/auth/google/callback",passport.authenticate("google",{
+  successRedirect:"https://vertxai-backend.vercel.app/founder",
+  failureRedirect:"https://vertxai-backend.vercel.app/"
+}))
+
+app.get("/login/sucess",async(req,res)=>{
+
+  if(req.user){
+      res.status(200).json({message:"user Login",user:req.user})
+  }else{
+      res.status(400).json({message:"Not Authorized"})
   }
-});
+})
 
-// ✅ Google OAuth Routes
-app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-
-app.get(
-  "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  (req, res) => {
-    res.redirect(process.env.FRONTEND_URL || "/");
-  }
-);
-
-app.get("/auth/logout", (req, res) => {
-  req.logout((err) => {
-    if (err) return res.status(500).json({ error: "Logout failed" });
-    req.session.destroy(); // Clear session
-    res.redirect(process.env.FRONTEND_URL || "/");
-  });
-});
-
-app.get("/auth/user", (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json(req.user);
-  } else {
-    res.status(401).json({ error: "Unauthorized" });
-  }
-});
+app.get("/logout",(req,res,next)=>{
+  req.logout(function(err){
+      if(err){return next(err)}
+      res.redirect("https://vertxai-backend.vercel.app/");
+  })
+})
 
 // ✅ Routes
 app.use("/api/auth", require("./routers/auth"));
