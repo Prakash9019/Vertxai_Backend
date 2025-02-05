@@ -110,12 +110,23 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //     res.status(401).json({ error: "Unauthorized" });
 //   }
 // });
+// const session = require("express-session");
+const MongoStore = require("connect-mongo");
 
-app.use(session({
-  secret:"YOUR SECRET KEY",
-  resave:false,
-  saveUninitialized:true
-}))
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "default_secret",
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // Ensure secure cookies in production
+      httpOnly: true, // Prevent client-side access to cookies
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  })
+);
+
 
 // setuppassport
 app.use(passport.initialize());
