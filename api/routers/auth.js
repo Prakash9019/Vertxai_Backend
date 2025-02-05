@@ -1,13 +1,17 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
-const User = require("../user.js");
+const User = require("../models/user.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const multer =require("multer")
 const nodemailer = require("nodemailer");
-
+const Post=require("../models/post.js")
 
 const router = express.Router();
 const JWT_SECRET = "surya_secret"; // Ensure this is an environment variable for security
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // Configure email transporter
 const transporter = nodemailer.createTransport({
@@ -97,7 +101,32 @@ const generateVerificationToken = (email, code) => {
 
 
 
+router.post("/posts", upload.single("image"), async (req, res) => {
+  try {
+    const { email, text } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
+    const image = req.file ? req.file.buffer.toString("base64") : null;
+
+    const newPost = new Post({ userEmail: email, text, image });
+    await newPost.save();
+
+    res.status(201).json(newPost);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get All Posts
+router.get("/posts", async (req, res) => {
+  try {
+    const posts = await Post.find().sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 
 

@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require("express-session");
-const User = require("./user.js");
+const User = require("./models/user.js");
 const cookieSession = require("cookie-session");
 const passport = require("passport");
 require("dotenv").config();
@@ -109,6 +109,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', require('./routers/auth.js'));
 app.use('/api/notes', require('./routers/notes.js'));
+// app.use("/api/post",require(""))
 
 // Health Check
 app.get('/', (req, res) => {
