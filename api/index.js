@@ -118,7 +118,7 @@ app.use(
     secret: process.env.SESSION_SECRET || "default_secret",
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
+    store: MongoStore.create({ mongoUrl: 'mongodb+srv://plsprakash2003:Surya_2003@cluster0.bpe9m.mongodb.net/Cluster0?retryWrites=true&w=majority' }),
     cookie: {
       secure: process.env.NODE_ENV === "production", // Ensure secure cookies in production
       httpOnly: true, // Prevent client-side access to cookies
