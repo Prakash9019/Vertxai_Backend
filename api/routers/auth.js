@@ -28,79 +28,6 @@ const generateVerificationToken = (email, code) => {
 };
 
 
-
-
-
-
-
-// passport.use(
-//   new GoogleStrategy(
-//     {
-//       clientID: process.env.GOOGLE_CLIENT_ID,
-//       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-//       callbackURL: "/auth/google/callback",
-//     },
-//     async (accessToken, refreshToken, profile, done) => {
-//       const existingUser = await User.findOne({ googleId: profile.id });
-//       if (existingUser) {
-//         return done(null, existingUser);
-//       }
-
-//       const newUser = await User.create({
-//         googleId: profile.id,
-//         name: profile.displayName,
-//         email: profile.emails[0].value,
-//         profilePicture: profile.photos[0].value,
-//       });
-
-//       done(null, newUser);
-//     }
-//   )
-// );
-
-// // Serialize and Deserialize User
-// passport.serializeUser((user, done) => {
-//   done(null, user.id);
-// });
-
-// passport.deserializeUser(async (id, done) => {
-//   const user = await User.findById(id);
-//   done(null, user);
-// });
-
-
-
-// router.get(
-//   "/auth/google",
-//   passport.authenticate("google", { scope: ["profile", "email"] })
-// );
-
-// router.get(
-//   "/auth/google/callback",
-//   passport.authenticate("google", { failureRedirect: "/login" }),
-//   (req, res) => {
-//     res.redirect("/"); // Redirect to your frontend after successful login
-//   }
-// );
-
-// router.get("/auth/logout", (req, res) => {
-//   req.logout((err) => {
-//     if (err) console.error(err);
-//     res.redirect("/");
-//   });
-// });
-
-// router.get("/auth/user", (req, res) => {
-//   if (req.isAuthenticated()) {
-//     res.json(req.user); // Send user details to the frontend
-//   } else {
-//     res.status(401).send("Unauthorized");
-//   }
-// });
-
-
-
-
 router.post("/posts", upload.single("image"), async (req, res) => {
   try {
     const { email, text } = req.body;
@@ -127,52 +54,6 @@ router.get("/posts", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// router.get(
-//   "/google",
-//   passport.authenticate("google", {
-//     scope: ["profile", "email"],
-//   })
-// );
-
-// // Google Redirect Callback
-// router.get(
-//   "/google/callback",
-//   passport.authenticate("google", { failureRedirect: "/" }),
-//   (req, res) => {
-//     res.redirect("http://localhost:3000/dashboard"); // Redirect to frontend
-//   }
-// );
-
-// // Get Current User
-// router.get("/current_user", (req, res) => {
-//   res.send(req.user);
-// });
-
-// // Logout
-// router.get("/logout", (req, res) => {
-//   req.logout((err) => {
-//     if (err) {
-//       return res.status(500).send(err);
-//     }
-//     res.redirect("/");
-//   });
-// });
 
 // **1. Register User and Send Verification Email**
 router.post(
