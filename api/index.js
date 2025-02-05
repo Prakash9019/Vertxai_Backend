@@ -41,7 +41,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // ✅ Google OAuth Strategy
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
 passport.use(
   new GoogleStrategy(
     {
@@ -51,24 +50,24 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await User.findOne({ googleId: profile.id });
-
-        if (!user) {
-          user = await User.create({
-            googleId: profile.id,
+        const updatedUser = await User.findOneAndUpdate(
+          { googleId: profile.id },  // Search for user by Google ID
+          {
             name: profile.displayName,
             email: profile.emails[0].value,
             profilePicture: profile.photos[0].value,
-          });
-        }
+          },
+          { new: true, upsert: true, setDefaultsOnInsert: true } // Create if not exists
+        );
 
-        return done(null, user);
+        return done(null, updatedUser);
       } catch (error) {
         return done(error, null);
       }
     }
   )
 );
+
 
 // ✅ Serialize and Deserialize User
 passport.serializeUser((user, done) => {
