@@ -184,8 +184,8 @@ passport.deserializeUser((user,done)=>{
 app.get("/auth/google",passport.authenticate("google",{scope:["profile","email"]}));
 
 app.get("/auth/google/callback",passport.authenticate("google",{
-  successRedirect:"https://vertxai-backend.vercel.app/profile",
-  failureRedirect:"https://vertxai-backend.vercel.app"
+  successRedirect:"https://vertxai.vercel.app/profile",
+  failureRedirect:"https://vertxai.vercel.app/signup1"
 }))
 
 app.get("/login/sucess",async(req,res)=>{
@@ -200,7 +200,7 @@ app.get("/login/sucess",async(req,res)=>{
 app.get("/logout",(req,res,next)=>{
   req.logout(function(err){
       if(err){return next(err)}
-      res.redirect("https://vertxai-backend.vercel.app/");
+      res.redirect("https://vertxai.vercel.app");
   })
 })
 
