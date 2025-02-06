@@ -3,7 +3,8 @@ const mongoose = require("mongoose");
 
 const postSchema = new mongoose.Schema({
   userEmail: { type: String, required: true },
-  text: { type: String, required: true },
+  title: { type: String, required: true },
+  description : { type: String },
   image: String,
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Store user IDs who liked the post
   shares: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Store user IDs who shared the post

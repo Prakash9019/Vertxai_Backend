@@ -184,8 +184,8 @@ passport.deserializeUser((user,done)=>{
 app.get("/auth/google",passport.authenticate("google",{scope:["profile","email"]}));
 
 app.get("/auth/google/callback",passport.authenticate("google",{
-  successRedirect:"https://vertxai-backend.vercel.app/founder/home",
-  failureRedirect:"https://vertxai-backend.vercel.app/"
+  successRedirect:"https://vertxai-backend.vercel.app/profile",
+  failureRedirect:"https://vertxai-backend.vercel.app"
 }))
 
 app.get("/login/sucess",async(req,res)=>{
@@ -206,7 +206,7 @@ app.get("/logout",(req,res,next)=>{
 
 // ✅ Routes
 app.use("/api/auth", require("./routers/auth.js"));
-// app.use("/api/posts", require("./routers/posts"));
+app.use("/api/posts", require("./routers/post.js"));
 app.use("/api/notes", require("./routers/notes.js"));
 
 // ✅ Health Check
