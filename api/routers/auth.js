@@ -33,13 +33,12 @@ router.post(
     body("dob").isISO8601().toDate().withMessage("Enter a valid date in YYYY-MM-DD format"),
   ],
   async (req, res) => {
-    console.log(req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, dob } = req.body;
+    const { email, dob,name } = req.body;
 
     try {
       const existingUser = await User.findOne({ email });
@@ -48,11 +47,11 @@ router.post(
       }
 
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
-      const token = generateVerificationToken(email, verificationCode);
+      const token = jwt.sign({ email, verificationCode }, JWT_SECRET);
       
 
       // Save the user with unverified status
-      const user = new User({ email, dob, isVerified: false });
+      const user = new User({ name , email, dob, isVerified: false });
       await user.save();
 
       // Send verification email
@@ -62,7 +61,7 @@ router.post(
         html: `<p>Your verification code is <strong>${verificationCode}</strong>. It will expire in 5 minutes.</p>`,
       });
 
-      res.status(200).json({ message: "Verification token sent to email.", token,email });
+      res.status(200).json({ message: "Verification token sent to email.", token });
     } catch (error) {
       console.error("Error during registration:", error.message);
       res.status(500).json({ message: "Internal Server Error" });
@@ -212,7 +211,7 @@ router.post("/set-username", [
       if (!user) {
           return res.status(404).json({ message: "User not found" });
       }
-      res.status(200).json({ message: "Username set successfully", user });
+      res.status(200).json({ message: "Username set successfully", user  });
   } catch (error) {
       res.status(500).json({ error: "Server error" });
   }

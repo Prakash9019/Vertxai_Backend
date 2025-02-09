@@ -2,25 +2,54 @@ const express = require("express");
 const router = express.Router();
 const Post = require("../models/post");
 const User = require("../models/user");
-
+const fs = require("fs");
 const multer =require("multer");
-const storage = multer.memoryStorage();
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const JWT_SECRET = "surya_secret"; // Ensure this is an environment variable for security
+
+const { v2: cloudinary } = require("cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Configure Multer with Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "uploads", // Cloudinary folder name
+    format: async (req, file) => "png", // Convert to PNG format
+    public_id: (req, file) => Date.now(), // Unique filename
+  },
+});
+
 const upload = multer({ storage });
 
 router.post("/posts", upload.single("image"), async (req, res) => {
   try {
-    const { email, title,description } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    const image = req.file ? req.file.buffer.toString("base64") : null;
-
-    const newPost = new Post({ userEmail: email, title,description, image });
-    await newPost.save();
-
-    res.status(201).json(newPost);
+    const { token,text } = req.body;
+    console.log(req.body);
+    // Access the uploaded image
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ error: "Image is required" });
+    }
+    const imageUrl = req.file.path;
+    const decoded = jwt.verify(token, JWT_SECRET);
+  const { email, code: storedCode } = decoded;
+  //  console.log(req.body);
+      const newPost = new Post({text,imageUrl , userEmail : email});
+       console.log(newPost);
+      await newPost.save();
+      //  res.status(201).json(newPost);
+      console.log(newPost.likes.length);
+      res.status(201).json({ message: "post  updated", newPost });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+      res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -28,6 +57,7 @@ router.post("/posts", upload.single("image"), async (req, res) => {
 router.get("/posts", async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 });
+    // console.log(posts);
     res.json(posts);
   } catch (error) {
     res.status(500).json({ error: "Server error" });
