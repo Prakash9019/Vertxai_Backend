@@ -32,21 +32,16 @@ const upload = multer({ storage });
 
 router.post("/posts", upload.single("image"), async (req, res) => {
   try {
-    const { token,text } = req.body;
-    console.log(req.body);
-    // Access the uploaded image
+    const { token,text,profilePic } = req.body;
     if (!req.file || !req.file.path) {
       return res.status(400).json({ error: "Image is required" });
     }
     const imageUrl = req.file.path;
     const decoded = jwt.verify(token, JWT_SECRET);
-  const { email, code: storedCode } = decoded;
-  //  console.log(req.body);
-      const newPost = new Post({text,imageUrl , userEmail : email});
+     const { email, code: storedCode } = decoded;
+      const newPost = new Post({text,imageUrl , userEmail : email ,profilePic});
        console.log(newPost);
       await newPost.save();
-      //  res.status(201).json(newPost);
-      console.log(newPost.likes.length);
       res.status(201).json({ message: "post  updated", newPost });
   } catch (error) {
       res.status(500).json({ error: "Server error" });
