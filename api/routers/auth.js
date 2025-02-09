@@ -163,11 +163,11 @@ router.post("/profile", async (req, res) => {
 });
 
 router.post("/get-profile", async (req, res) => {
-  const { email } = req.body;
+  const { token } = req.body;
 
   try {
-    // const decoded = jwt.verify(token, JWT_SECRET);
-    // const { email } = decoded;
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { email } = decoded;
 
     const user = await User.findOne({ email });
 
@@ -389,7 +389,9 @@ router.post(
 );
 
 router.post("/get-user", async (req, res) => {
-  const { email } = req.body;
+  const { token } = req.body;
+  const decoded = jwt.verify(token, JWT_SECRET);
+  const { email, code: storedCode } = decoded;
   console.log(email);
   try {
     const users = await User.findOne({ email }); // Fetch all users from DB
