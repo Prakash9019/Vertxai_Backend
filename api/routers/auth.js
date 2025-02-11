@@ -4,9 +4,9 @@ const User = require("../models/user.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const authenticateToken = require("../middlewares/authenticateToken"); // Import middleware
 
 const router = express.Router();
-const JWT_SECRET = "surya_secret"; // Ensure this is an environment variable for security
 
 
 
@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
 
 // Generate a token with email and code
 const generateVerificationToken = (email, code) => {
-  return jwt.sign({ email, code }, JWT_SECRET); // Token expires in 5 minutes
+  return jwt.sign({ email, code }, process.env.JWT_SECRET); // Token expires in 5 minutes
 };
 
 
@@ -47,7 +47,7 @@ router.post(
       }
 
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
-      const token = jwt.sign({ email, verificationCode }, JWT_SECRET);
+      const token = jwt.sign({ email, verificationCode }, process.env.JWT_SECRET);
       
 
       // Save the user with unverified status
@@ -69,18 +69,23 @@ router.post(
   }
 );
 
-// **2. Verify Email**
+
+
+
+
+
+
 router.post(
   "/verify",
+  authenticateToken, // Apply middleware
   [
-    body("token").notEmpty().withMessage("Token is required"),
     body("code").isLength({ min: 6, max: 6 }).withMessage("Invalid verification code"),
   ],
   async (req, res) => {
-    const { token, code } = req.body;
+    const { code } = req.body;
+
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      const { email, code: storedCode } = decoded;
+      const { email, code: storedCode } = req.user; // Extract from token
       if (storedCode !== code) {
         return res.status(400).json({ message: "Invalid verification code." });
       }
@@ -94,41 +99,34 @@ router.post(
         return res.status(400).json({ message: "User is already verified." });
       }
 
-      // Mark user as verified
       user.isVerified = true;
       await user.save();
 
       res.status(200).json({ message: "User verified successfully. You can now set a password." });
     } catch (error) {
-      if (error.name === "TokenExpiredError") {
-        return res.status(400).json({ message: "Verification token has expired. Please register again." });
-      }
-
-      console.error("Error during verification:", error.message);
       res.status(500).json({ message: "Internal Server Error" });
     }
   }
 );
 
-// **3. Set Password**
+// **2. Set Password (Updated)**
 router.post(
   "/set-password",
+  authenticateToken, // Apply middleware
   [
-    body("token").notEmpty().withMessage("Token is required"),
     body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
   ],
   async (req, res) => {
-    const { token, password } = req.body;
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const { email, code: storedCode } = decoded;
+    const { password } = req.body;
+    const { email } = req.user;
+
     try {
       const user = await User.findOne({ email });
       if (!user || !user.isVerified) {
         return res.status(400).json({ message: "Invalid or unverified email." });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      user.password = hashedPassword;
+      user.password = await bcrypt.hash(password, 10);
       await user.save();
 
       res.status(200).json({ message: "Password set successfully." });
@@ -138,39 +136,29 @@ router.post(
   }
 );
 
-// **4. Update Profile**
-router.post("/profile", async (req, res) => {
+// **3. Update Profile (Updated)**
+router.post("/profile", authenticateToken, async (req, res) => {
+  const { profilePic } = req.body;
+  const { email } = req.user;
 
-  const { token, profilePic } = req.body;
-  const decoded = jwt.verify(token, JWT_SECRET);
-  const { email, code: storedCode } = decoded;
-   console.log(req.body);
   try {
-      const user = await User.findOneAndUpdate(
-          { email },
-          { profilePic },
-          { new: true }
-      );
-       console.log(user);
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
-      }
+    const user = await User.findOneAndUpdate({ email }, { profilePic }, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-      res.status(200).json({ message: "Profile updated", user });
+    res.status(200).json({ message: "Profile updated", user });
   } catch (error) {
-      res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-router.post("/get-profile", async (req, res) => {
-  const { token } = req.body;
+// **4. Get Profile (Updated)**
+router.post("/get-profile", authenticateToken, async (req, res) => {
+  const { email } = req.user;
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const { email } = decoded;
-
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -188,34 +176,36 @@ router.post("/get-profile", async (req, res) => {
   }
 });
 
-
-// **5. Set Username**
-router.post("/set-username", [
+// **5. Set Username (Updated)**
+router.post("/set-username", authenticateToken, [
   body("username").isLength({ min: 3 }).withMessage("Username must be at least 3 characters")
 ], async (req, res) => {
-  const { token, username } = req.body;
-  const decoded = jwt.verify(token, JWT_SECRET);
-  const { email, code: storedCode } = decoded;
+  const { username } = req.body;
+  const { email } = req.user;
+
   try {
-      const existingUser = await User.findOne({ username });
-      if (existingUser) {
-          return res.status(400).json({ message: "Username already exists" });
-      }
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
 
-      const user = await User.findOneAndUpdate(
-          { email },
-          { username },
-          { new: true }
-      );
+    const user = await User.findOneAndUpdate({ email }, { username }, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
-      }
-      res.status(200).json({ message: "Username set successfully", user  });
+    res.status(200).json({ message: "Username set successfully", user });
   } catch (error) {
-      res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error" });
   }
 });
+
+
+
+
+
+
+
 
 // **6. Login**
 router.post(
@@ -247,7 +237,7 @@ async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
     const email = user.email;
-    const token = jwt.sign({ id: user._id }, JWT_SECRET);
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     res.status(200).json({ message: 'Login successful', token,email });
   } catch (error) {
     console.error('Error during login:', error);
@@ -326,7 +316,7 @@ router.post(
   async (req, res) => {
     const { token, code } = req.body;
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const { email, code: storedCode } = decoded;
       if (storedCode !== code) {
         return res.status(400).json({ message: "Invalid verification code." });
@@ -388,11 +378,9 @@ router.post(
   }
 );
 
-router.post("/get-user", async (req, res) => {
-  const { token } = req.body;
-  const decoded = jwt.verify(token, JWT_SECRET);
-  const { email, code: storedCode } = decoded;
-  console.log(email);
+router.post("/get-user", authenticateToken ,async (req, res) => {
+  
+  const { email } = req.user;
   try {
     const users = await User.findOne({ email }); // Fetch all users from DB
     res.json(users);

@@ -2,15 +2,14 @@ const express = require("express");
 const router = express.Router();
 const Post = require("../models/post");
 const User = require("../models/user");
-const fs = require("fs");
+const mongoose = require("mongoose");
 const multer =require("multer");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
 const JWT_SECRET = "surya_secret"; // Ensure this is an environment variable for security
 
 const { v2: cloudinary } = require("cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const authenticateToken = require("../middlewares/authenticateToken");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -30,21 +29,65 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-router.post("/posts", upload.single("image"), async (req, res) => {
+router.post("/posts",authenticateToken, upload.single("image"), async (req, res) => {
   try {
-    const { token,text,profilePic } = req.body;
+    const { text,profilePic } = req.body;
     if (!req.file || !req.file.path) {
       return res.status(400).json({ error: "Image is required" });
     }
     const imageUrl = req.file.path;
-    const decoded = jwt.verify(token, JWT_SECRET);
-     const { email, code: storedCode } = decoded;
+    const { email } = req.user;
       const newPost = new Post({text,imageUrl , userEmail : email ,profilePic});
        console.log(newPost);
       await newPost.save();
       res.status(201).json({ message: "post  updated", newPost });
   } catch (error) {
       res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.put("/posts/:postId/action", async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { userId, action, text } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: "Invalid Post ID" });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    if (action === "like") {
+      const index = post.likes.indexOf(userId);
+      if (index === -1) {
+        post.likes.push(userId); // Like the post
+      } else {
+        post.likes.splice(index, 1); // Unlike the post
+      }
+    }
+
+    if (action === "bookmark") {
+      const index = post.bookmarks.indexOf(userId);
+      if (index === -1) {
+        post.bookmarks.push(userId); // Bookmark the post
+      } else {
+        post.bookmarks.splice(index, 1); // Remove bookmark
+      }
+    }
+
+    if (action === "comment") {
+      post.comments.push({ userId, text, createdAt: new Date() });
+    }
+
+    await post.save();
+    res.status(200).json({ message: "Action updated", post });
+
+  } catch (error) {
+    console.error("Error handling post action:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

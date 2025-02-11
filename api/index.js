@@ -2,16 +2,12 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const session = require("express-session");
-const passport = require("passport");
 const connectDB = require("./db");
 const User = require("./models/user");
-const OAuth2Strategy = require("passport-google-oauth2").Strategy;
 const dotenv = require("dotenv");
 const { OAuth2Client } = require("google-auth-library");
-const CLIENT_ID='673542565874-ssffgagnlcbstnstkkg4q8lg27dbo9l3.apps.googleusercontent.com'
-const client = new OAuth2Client(CLIENT_ID);
+const client = new OAuth2Client(process.env.CLIENT_ID);
 const jwt = require("jsonwebtoken");
-const path = require("path");
 dotenv.config();
 // const JWT_SECRET = "surya_secret"; 
 connectDB(); // Connect to MongoDB
@@ -94,12 +90,13 @@ app.post("/api/google-login", async (req, res) => {
     // 01. Verify the token using Google API
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: CLIENT_ID,
+      audience: process.env.CLIENT_ID,
     });
     const payload = ticket.getPayload();
     const { sub, email, name, picture } = payload;
 
     let user = await User.findOne({ googleId: sub });
+    console.log(user);
     if (!user) {
       user = new User({
         googleId: sub,
