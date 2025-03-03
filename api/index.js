@@ -1,236 +1,125 @@
-const connectDB = require('./db');
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
 const session = require("express-session");
-const User = require("./user.js");
-const cookieSession = require("cookie-session");
-const passport = require("passport");
-require("dotenv").config();
+const connectDB = require("./db");
+const User = require("./models/user");
+const dotenv = require("dotenv");
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.CLIENT_ID);
+const jwt = require("jsonwebtoken");
+dotenv.config();
+// const JWT_SECRET = "surya_secret"; 
+connectDB(); // Connect to MongoDB
 
-// require("./config/passport"); // Passport Configuration
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-// Connect to Database
-connectDB();
+//  app.use(cors({
+//   origin: true,
+//   credentials:true, 
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+// }));
 
-
+app.use((req, res, next) => {
+  // res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups"); // ✅ Allow popups & authentication redirects
+  // res.setHeader("Cross-Origin-Embedder-Policy", "require-corp"); 
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Access-Control-Allow-Origin", "*"); // ✅ Allow all origins
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  next();
+});
 
 app.use(cors({
-  origin: true,
-  credentials:true, 
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: true, // ✅ Allow frontend origins
+  credentials: true, // ✅ Required for authentication
+  methods: ["GET", "POST", "PUT", "DELETE"],
 }));
-// cors(corsOptionsDelegate)
+
+
+
+
 
 app.use(express.json());
-app.use(
-  cookieSession({
-    name: "session",
-    keys: [process.env.SESSION_SECRET],
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-  })
-);
-app.use(passport.initialize());
-app.use(passport.session());
-
-
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback",
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      const existingUser = await User.findOne({ googleId: profile.id });
-      if (existingUser) {
-        return done(null, existingUser);
-      }
-
-      const newUser = await User.create({
-        googleId: profile.id,
-        name: profile.displayName,
-        email: profile.emails[0].value,
-        profilePicture: profile.photos[0].value,
-      });
-
-      done(null, newUser);
-    }
-  )
-);
-
-// Serialize and Deserialize User
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  const user = await User.findById(id);
-  done(null, user);
-});
-
-// Google OAuth Routes
-app.get(
-  "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-app.get(
-  "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  (req, res) => {
-    res.redirect("/"); // Redirect to your frontend after successful login
-  }
-);
-
-app.get("/auth/logout", (req, res) => {
-  req.logout((err) => {
-    if (err) console.error(err);
-    res.redirect("/");
-  });
-});
-
-app.get("/auth/user", (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json(req.user); // Send user details to the frontend
-  } else {
-    res.status(401).send("Unauthorized");
-  }
-});
-
-
-
-// Middleware for JSON Parsing
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/auth', require('./routers/auth.js'));
-app.use('/api/notes', require('./routers/notes.js'));
 
-// Health Check
-app.get('/', (req, res) => {
-    res.json("API is running");
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "default_secret",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }, // Set to true if using HTTPS
+  })
+);
+
+
+app.get("/login/sucess",async(req,res)=>{
+
+  if(req.user){
+      res.status(200).json({message:"user Login",user:req.user})
+  }else{
+      res.status(400).json({message:"Not Authorized"})
+  }
+})
+
+app.get("/logout",(req,res,next)=>{
+  req.logout(function(err){
+      if(err){return next(err)}
+      res.redirect("https://vertxai.vercel.app");
+  })
+})
+
+
+app.use("/api/auth", require("./routers/auth.js"));
+app.use("/api/posts", require("./routers/post.js"));
+app.use("/api/notes", require("./routers/notes.js"));
+
+
+app.get("/", (req, res) => {
+  res.json("API is running successfully");
+});
+const JWT_SECRET= 'surya_secret';
+app.post("/api/google-login", async (req, res) => {
+  const { token } = req.body;
+  console.log(token);
+  try {
+    // 01. Verify the token using Google API
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub, email, name, picture } = payload;
+
+    let user = await User.findOne({ googleId: sub });
+    console.log(user);
+    if (!user) {
+      user = new User({
+        googleId: sub,
+        email,
+        name,
+        profilePic : picture,
+      });
+      await user.save();
+      console.log(user);
+    }
+     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
+     const token1 = jwt.sign({ email, verificationCode }, JWT_SECRET);
+     console.log(token1);
+     res.status(200).json({ success: true, token : token1  });
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    res.status(401).json({ success: false, message: 'Invalid token' });
+  }
 });
 
-// Start Server
+
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
-
 
 module.exports = app;
-
-
-
-
-
-
-// const connectDB = require("./db");
-// const express = require("express");
-// const cors = require("cors");
-// const bodyParser = require("body-parser");
-// const passport = require("passport");
-// const cookieSession = require("cookie-session");
-// require("dotenv").config();
-
-// const app = express();
-// connectDB();
-
-// // CORS Setup
-// app.use(
-//   cors({
-//     origin: process.env.FRONTEND_URL || "http://localhost:5173", // Change to your frontend URL
-//     credentials: true,
-//   })
-// );
-
-// app.use(express.json());
-// app.use(bodyParser.urlencoded({ extended: true }));
-
-// // Cookie-based session
-// app.use(
-//   cookieSession({
-//     name: "session",
-//     keys: [process.env.SESSION_SECRET],
-//     maxAge: 24 * 60 * 60 * 1000, // 1 day
-//   })
-// );
-
-// // Passport Initialization
-// app.use(passport.initialize());
-// app.use(passport.session());
-// const User = require("./user.js")
-// // Google OAuth Setup
-// const GoogleStrategy = require("passport-google-oauth20").Strategy;
-// passport.use(
-//   new GoogleStrategy(
-//     {
-//       clientID: process.env.GOOGLE_CLIENT_ID,
-//       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-//       callbackURL: process.env.GOOGLE_CALLBACK_URL, // Use from .env
-//     },
-//     async (accessToken, refreshToken, profile, done) => {
-//       try {
-//         let user = await User.findOne({ googleId: profile.id });
-//         if (!user) {
-//           user = await User.create({
-//             googleId: profile.id,
-//             name: profile.displayName,
-//             email: profile.emails[0].value,
-//             profilePicture: profile.photos[0].value,
-//           });
-//         }
-//         return done(null, user);
-//       } catch (error) {
-//         return done(error, null);
-//       }
-//     }
-//   )
-// );
-
-
-// passport.serializeUser((user, done) => done(null, user.id));
-// passport.deserializeUser(async (id, done) => {
-//   const user = await User.findById(id);
-//   done(null, user);
-// });
-
-// // Authentication Routes
-// app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-
-// app.get(
-//   "/api/auth/google/callback",
-//   passport.authenticate("google", { failureRedirect: "/login" }),
-//   (req, res) => {
-//     res.redirect(process.env.FRONTEND_URL || "/");
-//   }
-// );
-
-// app.get("/api/auth/logout", (req, res) => {
-//   req.logout((err) => {
-//     if (err) console.error(err);
-//     res.redirect(process.env.FRONTEND_URL || "/");
-//   });
-// });
-
-// app.get("/api/auth/user", (req, res) => {
-//   if (req.isAuthenticated()) {
-//     res.json(req.user);
-//   } else {
-//     res.status(401).send("Unauthorized");
-//   }
-// });
-
-// // API Routes
-// app.use("/api/notes", require("./routers/notes.js"));
-
-// // Health Check
-// app.get("/api", (req, res) => {
-//   res.json("API is running");
-// });
-
-// // Export Serverless Function
-// module.exports = app;

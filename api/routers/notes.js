@@ -1,6 +1,6 @@
 const express=require('express');
 const router=express.Router();
-const fetchuser=require('../fetch.js');
+const fetchuser=require('../middlewares/authenticateToken.js');
 const Note=require('../note.js');
 const Card=require("../card.js");
 const { body, validationResult } = require('express-validator');
