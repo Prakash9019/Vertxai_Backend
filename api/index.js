@@ -82,7 +82,7 @@ app.use("/api/notes", require("./routers/notes.js"));
 app.get("/", (req, res) => {
   res.json("API is running successfully");
 });
-const JWT_SECRET= 'surya_secret';
+const JWT_SECRET= 'Vertxai_2025';
 app.post("/api/google-login", async (req, res) => {
   const { token } = req.body;
   console.log(token);
