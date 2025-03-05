@@ -237,7 +237,10 @@ async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
     const email = user.email;
+    console.log(user);
+    console.log(email);
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    console.log(token);
     res.status(200).json({ message: 'Login successful', token,email });
   } catch (error) {
     console.error('Error during login:', error);
